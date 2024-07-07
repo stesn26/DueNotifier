@@ -151,5 +151,4 @@ for invoicePdf in invoiceFiles:
             counter = counter + 1
             if len(data) == 7 and (word == 'По' or word == 'В'):
                 checkDuePayment(data)
-                print(data)
                 data = {}
