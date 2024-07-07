@@ -5,10 +5,10 @@ from datetime import timedelta
 import tkinter
 from tkinter import messagebox
 import re
-
-reader = PdfReader('../../tests/Издадени документи 2024.03.pdf')
+import os
 
 # Constants
+INVOICE_DIRECTORY_PATH = '../../tests'
 PAYMENT_WINDOW_DAYS = 14
 PAID_INVOICE_FILE = 'PaidInvoiceList.txt'
 
@@ -116,32 +116,40 @@ def markedAsPaid(id):
         paidInvoices = open(PAID_INVOICE_FILE, 'r')
         for line in paidInvoices.readlines():
             if id in line:
-                print("Found in line" + line)
                 return True
         return False
     except:
         return False
 
-pageCounter = 0
 
-for page in reader.pages:
-    text = page.extract_text()
+files = os.listdir(INVOICE_DIRECTORY_PATH)
+invoiceFiles = []
+for file in files:
+    if file.find('pdf') != -1 and file.find('документи') != -1:
+        invoiceFiles.insert(1, file)
+
+for invoicePdf in invoiceFiles:
+    reader = PdfReader(INVOICE_DIRECTORY_PATH + '/' + invoicePdf)
+    pageCounter = 0
+    for page in reader.pages:
+        text = page.extract_text()
   
-    # Parameter setup
-    counter = 0
-    data = {}
-    sum = SettingSum.Total
+        # Parameter setup
+        counter = 0
+        data = {}
+        sum = SettingSum.Total
 
-    # Skip garbage at beginning of page
-    garbageThreshhold = 5
-    if (pageCounter == 0):
-        garbageThreshhold = 16
-    pageCounter = pageCounter + 1
+        # Skip garbage at beginning of page
+        garbageThreshhold = 5
+        if (pageCounter == 0):
+            garbageThreshhold = 16
+        pageCounter = pageCounter + 1
 
-    for word in text.split(' '):
-        if counter > garbageThreshhold and len(word) > 0:
-            sum = parseWord(word, data, sum)
-        counter = counter + 1
-        if len(data) == 7 and (word == 'По' or word == 'В'):
-            checkDuePayment(data)
-            data = {}
+        for word in text.split(' '):
+            if counter > garbageThreshhold and len(word) > 0:
+                sum = parseWord(word, data, sum)
+            counter = counter + 1
+            if len(data) == 7 and (word == 'По' or word == 'В'):
+                checkDuePayment(data)
+                print(data)
+                data = {}
