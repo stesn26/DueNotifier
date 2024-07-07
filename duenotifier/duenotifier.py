@@ -8,9 +8,9 @@ import re
 import os
 
 # Constants
-INVOICE_DIRECTORY_PATH = '../../tests'
+INVOICE_DIRECTORY_PATH = 'C:/Users/stesn/Desktop/tests'
 PAYMENT_WINDOW_DAYS = 14
-PAID_INVOICE_FILE = 'PaidInvoiceList.txt'
+PAID_INVOICE_FILE = 'C:/Users/stesn/Desktop/DueNotifier/duenotifier/PaidInvoiceList.txt'
 
 skipWords = { 'Фактура', 'По', 'сметка', 'Служебен', 'потребител', 'потребител\n', 'В', 'брой', '(Анулиран)', '\n(Анулиран)'  }
 
