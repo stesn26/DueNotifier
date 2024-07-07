@@ -1,8 +1,16 @@
 from pypdf import PdfReader
 from enum import Enum
+from datetime import date
+from datetime import timedelta
+import tkinter
+from tkinter import messagebox
 import re
 
 reader = PdfReader('../../tests/Издадени документи 2024.03.pdf')
+
+# Constants
+PAYMENT_WINDOW_DAYS = 14
+PAID_INVOICE_FILE = 'PaidInvoiceList.txt'
 
 skipWords = { 'Фактура', 'По', 'сметка', 'Служебен', 'потребител', 'потребител\n', 'В', 'брой', '(Анулиран)', '\n(Анулиран)'  }
 
@@ -67,9 +75,52 @@ def parseWord(word, data, sum):
             data[InvoiceFields.PartnerName] += (' ' + cleanWord)
         except:
             data[InvoiceFields.PartnerName] = cleanWord
-
     return sum
         
+def checkDuePayment(invoice):
+    dateStr = ''
+    try:
+        filteredDate = data[InvoiceFields.Date].split(')')
+        if len(filteredDate) == 1:
+            dateStr = filteredDate[0]
+        elif len(filteredDate) == 2:
+            dateStr = filteredDate[1]
+    except:
+        print("No date for invoice")
+        return
+
+    dateFields = dateStr.split('.')
+    day = dateFields[0].lstrip('0')
+    month = dateFields[1].lstrip('0')
+    year = dateFields[2]
+
+    today = date.today()
+    invoiceDate = date(int(year), int(month), int(day))
+    if ((today - invoiceDate) > timedelta(days = PAYMENT_WINDOW_DAYS)):
+        if markedAsPaid(invoice[InvoiceFields.InvoiceID]):
+            return
+        try:
+            res = tkinter.messagebox.askquestion("Неплатена фактура от: ", invoice[InvoiceFields.PartnerName] + "\nцъкнете YES, за да маркирате като платена или NO за повторно напомняне")
+            if (res == 'yes'):
+                markAsPaid(invoiceDate.strftime('%d%m%Y'), invoice[InvoiceFields.InvoiceID])
+        except:
+            tkinter.messagebox.showwarning("Warning", "Cannot parse invoice data")
+
+def markAsPaid(date, id):
+    paidInvoices = open(PAID_INVOICE_FILE, 'a')
+    paidInvoices.write(date + ' ' + id + '\n')
+    paidInvoices.close()
+
+def markedAsPaid(id):
+    try:
+        paidInvoices = open(PAID_INVOICE_FILE, 'r')
+        for line in paidInvoices.readlines():
+            if id in line:
+                print("Found in line" + line)
+                return True
+        return False
+    except:
+        return False
 
 pageCounter = 0
 
@@ -92,5 +143,5 @@ for page in reader.pages:
             sum = parseWord(word, data, sum)
         counter = counter + 1
         if len(data) == 7 and (word == 'По' or word == 'В'):
-            print(data)
+            checkDuePayment(data)
             data = {}
